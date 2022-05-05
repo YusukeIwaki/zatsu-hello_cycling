@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/YusukeIwaki/zatsu-hello_cycling/issues"
   },
-  "homepage": "https://github.com/YusukeIwaki/zatsu-hello_cycling#readme"
+  "homepage": "https://github.com/YusukeIwaki/zatsu-hello_cycling#readme",
+  "dependencies": {
+    "@zatsu/core": "^0.2.1"
+  }
 }

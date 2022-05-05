@@ -48,7 +48,6 @@ function injectCommonHeaders(performRequest, request) {
         ['Accept-Language', 'ja'],
         ['Accept-Encoding', 'gzip, deflate, br'],
         ['Content-Type', 'application/json'],
-        ['Content-Length', '29'],
         ['User-Agent', 'HELLOCYCLING/1 CFNetwork/1331.0.7 Darwin/21.4.0'],
         ['lang', ' ja'],
         ['Connection', 'keep-alive'],
@@ -86,26 +85,25 @@ async function fetchToken() {
  * @param {Request} request
  */
 async function authedRequest(performRequest, request) {
-    let token = await tokenCache.get()
-    let fetchedToken
-    if (!token) {
-        fetchedToken = await fetchToken()
-        token = fetchedToken
-    }
-    // console.log(`Using token=${token}`)
-    updateKeyValue(request.headers, 'Authorization', token)
+    const cachedToken = await tokenCache.get();
+    const tokenForRequest = (!cachedToken || cachedToken == '') ? await fetchToken() : cachedToken
+
+    updateKeyValue(request.headers, 'Authorization', tokenForRequest)
     let response = await performRequest(request)
     if (response.status == 401) {
-        fetchedToken = await fetchToken()
-        // console.log(`Retry: with token=${fetchedToken}`)
-
-        updateKeyValue(request.headers, 'Authorization', fetchedToken)
-        response = await performRequest(request)
+        if (!cachedToken) {
+            await tokenCache.delete()
+            return performRequest(request);
+        }
     }
 
-    if (response.status >= 200 && response.status < 300 && !!fetchedToken) {
-        await tokenCache.put(fetchedToken)
+    if (response.status >= 200 && response.status < 300) {
+        console.log(`cachedToken=${cachedToken}, tokenForRequest=${tokenForRequest}`)
+        if ((!cachedToken || cachedToken == '') && tokenForRequest) {
+            await tokenCache.put(tokenForRequest)
+        }
     }
+
     return response
 }
 
